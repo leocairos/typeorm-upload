@@ -4,6 +4,7 @@ import { getRepository, getCustomRepository } from 'typeorm';
 import TransactionRepository from '../repositories/TransactionsRepository';
 import Category from '../models/Category';
 import Transaction from '../models/Transaction';
+import AppError from '../errors/AppError';
 
 interface Request {
   title: string;
@@ -20,27 +21,29 @@ class CreateTransactionService {
     category,
   }: Request): Promise<Transaction> {
     const transactionsRepository = getCustomRepository(TransactionRepository);
+
+    const { total } = await transactionsRepository.getBalance();
+
+    if (type === 'outcome' && value > total) {
+      throw new AppError('Outcome value exceds your avaliable total', 400);
+    }
+
     const categoriesRepository = getRepository(Category);
 
-    /* const findCategory = await categoriesRepository.findOne({
+    const findCategory = await categoriesRepository.findOne({
       where: { title: category },
-    }); */
+    });
 
-    /* if (!findCategory) {
-      const newCategory = await categoriesRepository.save({ title: category });
-    } */
-
-    const newCategory = await categoriesRepository.save({ title: category });
-    const category_id = newCategory.id;
+    const thisCategory =
+      findCategory || (await categoriesRepository.save({ title: category }));
 
     const transaction = transactionsRepository.create({
       title,
       type,
       value,
-      category_id,
+      category_id: thisCategory.id,
     });
 
-    console.log({ transaction });
     await transactionsRepository.save(transaction);
 
     return transaction;
