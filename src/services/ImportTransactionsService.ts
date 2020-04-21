@@ -34,7 +34,16 @@ class ImportTransactionsService {
       return trimmedRow;
     });
 
-    await Promise.all(
+    for (const record of trimmedRows) {
+      const transactionData = { ...record, value: parseFloat(record.value) };
+
+      const createdTransaction = await createTransaction.execute(
+        transactionData,
+      );
+
+      createdTransactions.push(createdTransaction);
+    }
+    /* await Promise.all(
       trimmedRows.map(async row => {
         const transactionData = { ...row, value: parseFloat(row.value) };
 
@@ -44,7 +53,7 @@ class ImportTransactionsService {
 
         createdTransactions.push(createdTransaction);
       }),
-    );
+    ); */
 
     await fs.promises.unlink(importFilePath);
 
