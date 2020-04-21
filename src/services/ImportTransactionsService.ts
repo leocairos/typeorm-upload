@@ -1,21 +1,27 @@
-import { getRepository } from 'typeorm';
-import path from 'path';
-import fs from 'fs';
-import csv from 'csv-parse';
-
-import AppError from '../errors/AppError';
-import uploadConfig from '../config/upload';
 import Transaction from '../models/Transaction';
+import CreateTransactionService from './CreateTransactionService';
+import ImportCSV from '../util/ImportCSV';
 
 class ImportTransactionsService {
   async execute(importFilename: string): Promise<Transaction[]> {
-    // TODO
-    const transactionCSV = [];
-    fs.createReadStream(importFilename)
-      .pipe(csv())
-      .on('data', data => {
-        console.log(`${data.name}`);
+    const importCSV = new ImportCSV();
+    const records = await importCSV.importFile(importFilename);
+    // console.log('records: ', records);
+
+    const transactions: Transaction[] = [];
+    records.forEach(async row => {
+      const createTransactionService = new CreateTransactionService();
+      const transaction = await createTransactionService.execute({
+        title: row.title,
+        value: row.value,
+        type: row.type,
+        category: row.category,
       });
+      transactions.push(transaction);
+    });
+
+    // console.log('transactions: ', transactions);
+    return transactions;
   }
 }
 

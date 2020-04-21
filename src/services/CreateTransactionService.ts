@@ -37,7 +37,7 @@ class CreateTransactionService {
     const thisCategory =
       findCategory || (await categoriesRepository.save({ title: category }));
 
-    const transaction = transactionsRepository.create({
+    const transaction = await transactionsRepository.create({
       title,
       type,
       value,
@@ -45,6 +45,10 @@ class CreateTransactionService {
     });
 
     await transactionsRepository.save(transaction);
+
+    /* await console.log(
+      `Create Transaction Service: ${transaction.title} at ${Date.now()}`,
+    ); */
 
     return transaction;
   }
